@@ -1,0 +1,50 @@
+- hosts: Servers
+  tasks:
+  - name: "Installing httpd software"
+    package:
+      name: httpd
+      state: present
+  - name: "Installing php software"
+    package:
+      name: php
+      state: present
+  - name: "Starting and Enabling httpd service"
+    service:
+      name: httpd
+      state: started
+      enabled: yes
+  - name: "Copying the index.php file"
+    copy:
+      src: index.php
+      dest: /var/www/html/index.php
+
+- hosts: LB
+  vars_prompt:
+  - name: LB_port
+    private: no
+    prompt: "Enter the port for Load Balancer"
+  tasks:
+  - name: "Installing HAProxy"
+    package:
+      name: haproxy
+      state: present
+  - name: "Setting SELinux to Permissive Temporarily"
+    selinux:
+      state: permissive
+      policy: targeted
+  - name: "Starting and Enabling HAProxy Service"
+    service:
+      name: haproxy
+      state: started
+      enabled: yes
+  - name: "Updating HAProxy Conf. file"
+    template:
+      src: haproxy.cfg
+      dest: /etc/haproxy/haproxy.cfg
+    notify:
+      - restart_haproxy
+  handlers:
+  - name: "restart_haproxy"
+    service:
+      name: haproxy
+      state: restarted 
